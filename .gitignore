@@ -1,0 +1,5 @@
+resources/public/js
+.nrepl-port
+target
+figwheel_server.log
+pom.xml
