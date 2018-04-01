@@ -103,6 +103,11 @@
                        :flex-direction "column"}}]
         controls))
 
+(defn marker-defs []
+  [:defs
+   [:marker {:id "arrow" :marker-width 2 :marker-height 2 :orient "auto" :refY 1}
+    [:path {:d "M0,0 L2,1 0,2"}]]])
+
 (defn mappy [{:keys [width height center zoom controls] :as opts} content]
   (let [center-tile-pos (osm/lat-lon->tile-pos center zoom)
         center-px (osm/tile->px center-tile-pos)
@@ -121,8 +126,8 @@
                      :overflow "hidden"
                      :pointer-events "none"
                      :z-index 3}
-             :viewBox (str  "0 0 " width " " height)
-}]
+             :viewBox (str  "0 0 " width " " height)}
+            [marker-defs]]
            (comp
             (remove nil?)
             (map (fn [[map-content-component & content]]
@@ -132,18 +137,18 @@
                          content))))
            content)]))
 
-(defn- line-string-path [zoom {:keys [color stroke-width] :as style} {tx :x ty :y :as top-left} coordinates]
+(defn- line-string-path [zoom {:keys [color stroke-width arrows?] :as style} {tx :x ty :y :as top-left} coordinates]
   (let [coords (map #(let [{:keys [x y]} (osm/tile->px (osm/lat-lon->tile-pos % zoom))]
-                       (str (- x tx) " " (- y ty)))
+                       (str (- x tx) "," (- y ty)))
                     coordinates)]
-    [:path {:fill "none"
-            :stroke (or color "black")
-            :stroke-width (or stroke-width 1)
-            :stroke-linejoin "round"
-            :stroke-linecap "round"
-            :style {:z-index 3}
-            :d (str "M" (first coords) " L"
-                    (str/join " L" (rest coords)))}]))
+    [:polyline {:fill "none"
+                :stroke (or color "black")
+                :stroke-width (or stroke-width 1)
+                :stroke-linejoin "round"
+                :stroke-linecap "round"
+                :style {:z-index 3 :marker-mid (when arrows?
+                                                 "url(#arrow)")}
+                :points (str/join " " coords)}]))
 
 (defmethod feature :line-string [{:keys [top-left width height zoom]
                                   :as opts} line-string]
