@@ -105,9 +105,7 @@
 (defn mappy [{:keys [width height center zoom on-drag-pan controls] :as opts} content]
   (println "zoom" zoom)
   (let [center-tile-pos (osm/lat-lon->tile-pos center zoom)
-
         center-px (osm/tile->px center-tile-pos)
-        ;_ (println "CENTER-PX: " center-px)
         top-left (-> center-px
                      (update :x - (* 0.5 width))
                      (update :y - (* 0.5 height)))]
@@ -122,10 +120,8 @@
                      :width width :height height
                      :overflow "hidden"
                      :pointer-events "none"
-                     :z-index 3
-                     }
-             :viewBox (str (Math/round (:x top-left)) " " (Math/round (:y top-left))
-                                       " " width " " height)
+                     :z-index 3}
+             :viewBox (str  "0 0 " width " " height)
 }]
            (comp
             (remove nil?)
@@ -136,9 +132,9 @@
                          content))))
            content)]))
 
-(defn- line-string-path [zoom {:keys [color stroke-width] :as style} coordinates]
+(defn- line-string-path [zoom {:keys [color stroke-width] :as style} {tx :x ty :y :as top-left} coordinates]
   (let [coords (map #(let [{:keys [x y]} (osm/tile->px (osm/lat-lon->tile-pos % zoom))]
-                       (str x " " y))
+                       (str (- x tx) " " (- y ty)))
                     coordinates)]
     [:path {:fill "none"
             :stroke (or color "black")
@@ -151,5 +147,4 @@
 
 (defmethod feature :line-string [{:keys [top-left width height zoom]
                                   :as opts} line-string]
-  [:g
-   [line-string-path zoom (:style line-string) (:coordinates line-string)]])
+  [line-string-path zoom (:style line-string) top-left (:coordinates line-string)])
