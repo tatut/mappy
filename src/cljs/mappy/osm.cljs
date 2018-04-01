@@ -21,7 +21,7 @@
         xtile (* (/ (+ lon 180) 360) z)
         r (to-rad lat)
         ytile (* (/ (- 1 (/ (Math/log (+ (Math/tan r)
-                                         (/ 1.0 (Math/cos r)))) pi)) 2) z)]
+                                            (/ 1.0 (Math/cos r)))) pi)) 2) z)]
     {:x (cond
           (neg? xtile) 0
           (>= xtile z) (dec z)
@@ -47,7 +47,7 @@
       (update :x px)
       (update :y px)))
 
-(defn pixel->lat-lon [[pixel-x pixel-y] zoom]
+(defn tile->lat-lon [[pixel-x pixel-y] zoom]
   (let [sz (map-size zoom)
         n (- pi
              (/ (* 2 pi pixel-y)

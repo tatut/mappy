@@ -5,11 +5,14 @@
 (def view (r/atom {:zoom 10
                    :center [65 25]}))
 
+(defn update-view [view-atom center zoom]
+  (swap! view-atom merge {:center center :zoom zoom}))
+
 (defn view-opts
   ([] (view-opts view))
   ([view-atom]
    (merge @view-atom
-          {:on-drag-pan (r/partial swap! view-atom assoc :center)})))
+          {:on-viewport (r/partial update-view view-atom)})))
 
 (defn on-zoom
   ([] (on-zoom view))

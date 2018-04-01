@@ -53,11 +53,10 @@
     [x y]))
 
 (defn- tile-event-lat-lon [tile zoom e]
-  (osm/pixel->lat-lon (tile-event-coords tile zoom e) zoom))
+  (osm/tile->lat-lon (tile-event-coords tile zoom e) zoom))
 
-(defn- tile-grid [{:keys [width height center zoom on-drag-pan]}]
+(defn- tile-grid [{:keys [width height center zoom on-viewport]}]
   (r/with-let [drag (r/atom nil)]
-    #_(println "DRAG STATE: " @drag)
     (let [{tx :x ty :y} (osm/lat-lon->tile center zoom)]
       [:div.mappy-tiles {:style {:transform "translate3d(0px,0px,0px)" :z-index 2}}
        (doall
@@ -65,6 +64,9 @@
           ^{:key (tile-key tile)}
           [:img {:src (osm/tile-url tile)
                  :draggable true
+                 :on-double-click #(when (< zoom 19)
+                                     (let [center (tile-event-lat-lon tile zoom %)]
+                                       (on-viewport center (inc zoom))))
                  :on-mouse-move #(when @drag
                                    (let [{[start-x start-y] :start
                                           [lat lon] :center} @drag
@@ -73,8 +75,7 @@
                                          z (Math/pow 2 zoom)
                                          dx (/ (- start-x cur-x) z)
                                          dy (/ (- cur-y start-y) z)]
-                                     (on-drag-pan [(+ lat dy) (+ lon dx)]))
-                                   #_(println "MOUSE AT " (tile-event-lat-lon tile zoom %)))
+                                     (on-viewport [(+ lat dy) (+ lon dx)] zoom)))
                  :on-mouse-down #(let [tile-coords (tile-event-coords tile zoom %)]
                                    (.preventDefault %)
                                    (reset! drag {:start [(.-pageX %) (.-pageY %)]
@@ -84,8 +85,8 @@
                  :on-wheel #(let [[lat lon] center
                                   z (Math/pow 2 zoom)]
                               (.preventDefault %)
-                              (on-drag-pan [(+ lat (/ (- (.-deltaY %)) z))
-                                            (+ lon (/ (.-deltaX %) z))]))
+                              (on-viewport [(+ lat (/ (- (.-deltaY %)) z))
+                                            (+ lon (/ (.-deltaX %) z))] zoom))
                  :on-drag #(println "DRAG" (.-clientX %) ", " (.-clientY %))
                  #_(on-drag-pan [(+ lat dlat) (+ lon dlon)])
                  :style {:transform (str "translate3d(" left "px, " top "px, 0px)")
@@ -102,8 +103,7 @@
                        :flex-direction "column"}}]
         controls))
 
-(defn mappy [{:keys [width height center zoom on-drag-pan controls] :as opts} content]
-  (println "zoom" zoom)
+(defn mappy [{:keys [width height center zoom controls] :as opts} content]
   (let [center-tile-pos (osm/lat-lon->tile-pos center zoom)
         center-px (osm/tile->px center-tile-pos)
         top-left (-> center-px

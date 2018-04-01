@@ -10,7 +10,10 @@
 (defn demo []
   [:div "MAPPY demo"
    (let [map-opts (merge {:width 700 :height 350
-                  :on-drag-pan #(swap! state assoc :center %)}
+                          :on-viewport (fn [center zoom]
+                                         (swap! state merge
+                                                {:center center
+                                                 :zoom zoom}))}
                          @state)]
      [mappy map-opts
       #_[feature {:type :line-string
